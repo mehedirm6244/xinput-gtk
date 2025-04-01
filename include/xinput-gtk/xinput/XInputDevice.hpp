@@ -41,14 +41,12 @@ public:
 	bool is_master() const { return m_is_master; }
 	bool is_float() const { return m_type == "floating"; }
 
-	// Helper functions
-	std::vector<Prop> get_props();
-	std::string get_info();
+	// Helper functions are defined in `XInputHelper.hpp` for convenience
 
 private:
 	std::string m_name;
 	std::string m_type;
-	int m_id{-1};
+	int m_id;
 	bool m_is_master{false}; // True if the device is a master device
 };
 

@@ -30,7 +30,7 @@ public:
 private:
 	XInputDevice m_device;
 
-	Gtk::VBox m_box_main{Gtk::ORIENTATION_HORIZONTAL, 10};
+	Gtk::Box m_box_main{Gtk::ORIENTATION_VERTICAL, 10};
 
 	Gtk::Label m_label_name;
 

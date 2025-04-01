@@ -16,19 +16,27 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef UTILS_HPP
-#define UTILS_HPP
+#ifndef XINPUT_HELPER_HPP
+#define XINPUT_HELPER_HPP
 
-#include <string>
+#include <xinput-gtk/xinput/XInputDevice.hpp>
+#include <regex>
 
-namespace Utils {
-	std::string get_cmd_output(const std::string& cmd);
+namespace XInputHelper {
+	const std::regex ID_PATTERN_REGEX(R"(\D*(\d+)\D*)");
+	const std::regex PROP_PATTERN_REGEX(R"(^(.+) \((\d+)\):(.+)$)");
 
-	bool check_installed(const std::string& program_name);
+	std::vector<XInputDevice> parse_xinput_list();
 
-	std::string str_trim_space(const std::string& source);
+	std::vector<XInputDevice::Prop> get_props(const int device_id);
 
-	void show_popup(const std::string& message);
-} // namespace Utils
+	std::string get_info(const int device_id);
 
-#endif // UTILS_HPP
+	void set_prop(const int device_id, const int prop_id, const std::string &value);
+
+	void set_float(const int device_id);
+
+	void set_master(const int device_id, const int master_id);
+} // namespace XInputHelper
+
+#endif // XINPUT_HELPER_HPP

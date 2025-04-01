@@ -28,47 +28,16 @@ XInputDevice::XInputDevice(const int device_id) : m_id(device_id) {
 	// Get device type
 	// `Device Name    id=X    [master/slave  type (Y)]`
 	// We're capturing `[master/slave  type (Y)]`
-	std::regex details_pattern(R"(\[(\w+)\s+(\w+)\s+\((\d+)\)\])");
+	const std::regex DETAILS_PATTERN_REGEX(R"(\[(\w+)\s+(\w+)\s+\((\d+)\)\])");
 	std::smatch match;
 
 	std::string details_str = "xinput list --short " + std::to_string(m_id);
 	std::string device_details = Utils::get_cmd_output(details_str);
 
-	if (std::regex_search(device_details, match, details_pattern)) {
+	if (std::regex_search(device_details, match, DETAILS_PATTERN_REGEX)) {
 	 	m_is_master = (match[1] == "master");
-	 	m_type = match[2];
+	 	m_type = match[2].str();
 	} else {
 	 	m_type = "floating";
 	}
 }
-
-std::vector<XInputDevice::Prop> XInputDevice::get_props() {
-	std::vector<XInputDevice::Prop> props_vector;
-
-	std::string props_cmd = "xinput list-props " + std::to_string(m_id);
-	std::string raw_props = Utils::get_cmd_output(props_cmd);
-
-	std::regex prop_pattern(R"(^(.+) \((\d+)\):(.+)$)");
-	std::smatch match;
-	std::istringstream stream(raw_props);
-	std::string current_line;
-
-	while (std::getline(stream, current_line)) {
-		if (std::regex_search(current_line, match, prop_pattern)) {
-	 		props_vector.emplace_back(Prop{
-	 			.id = std::stoi(match[2]),
-	 			.name = Utils::str_trim_space(match[1]),
-	 			.val = Utils::str_trim_space(match[3])
-	 		});
-		}
-	}
-
-	return props_vector;
-}
-
-std::string XInputDevice::get_info() {
-	std::string info_cmd = "xinput list " + std::to_string(m_id);
-	std::string info = Utils::get_cmd_output(info_cmd);
-	return info;
-}
-

@@ -20,9 +20,9 @@
 #include <xinput-gtk/gui/AboutDialog.hpp>
 #include <xinput-gtk/gui/InfoWindow.hpp>
 #include <xinput-gtk/gui/PropWindow.hpp>
-#include <xinput-gtk/Utils.hpp>
+#include <xinput-gtk/gui/ReattachWindow.hpp>
+#include <xinput-gtk/xinput/XInputHelper.hpp>
 #include <xinput-gtk/XInputGtk.hpp>
-#include <iostream>
 
 Window::Window() {
 	set_title("XInput GTK");
@@ -62,7 +62,7 @@ Window::Window() {
 
 	// Configure ActionBar
 	m_btn_reload.set_image_from_icon_name("view-refresh");
-	m_btn_reload.set_tooltip_text("Reload XInput list");
+	m_btn_reload.set_tooltip_text("Refresh list");
 
 	m_btn_info.set_image_from_icon_name("info");
 	m_btn_info.set_tooltip_text("Info");
@@ -70,8 +70,16 @@ Window::Window() {
 	m_btn_prop.set_image_from_icon_name("settings-configure");
 	m_btn_prop.set_tooltip_text("Properties");
 
+	m_btn_float.set_image_from_icon_name("gtk-disconnect");
+	m_btn_float.set_tooltip_text("Float selected device");
+
+	m_btn_attach.set_image_from_icon_name("gtk-connect");
+	m_btn_attach.set_tooltip_text("Reattach selected device");
+
 	m_actionbar.pack_start(m_btn_info);
 	m_actionbar.pack_start(m_btn_prop);
+	m_actionbar.pack_start(m_btn_float);
+	m_actionbar.pack_start(m_btn_attach);
 	m_actionbar.pack_end(m_btn_reload);
 
 	// Organize Layout
@@ -86,28 +94,30 @@ Window::Window() {
 }
 
 void Window::populate_tree() {
-	std::cout << "Loading device list" << std::endl;
 	m_tree_store->clear();
-	m_device_list = Utils::parse_xinput_list();
+	m_masters_list.clear();
+	m_device_list = XInputHelper::parse_xinput_list();
 
-	Gtk::TreeModel::Row parent;
+	Gtk::TreeModel::Row parent_row;
 
 	for (const auto& device : m_device_list) {
-		Gtk::TreeModel::Row row;
+		Gtk::TreeModel::Row current_row;
 		if (device.is_master() or device.is_float()) {
-			row = *(m_tree_store->append());
+			current_row = *(m_tree_store->append());
 			if (device.is_master()) {
-				parent = row;
+				m_masters_list.push_back(device.get_id());
+				parent_row = current_row; // Make a new branch if device is master
 			}
 		} else {
-			row = *(m_tree_store->append(parent.children()));
+			current_row = *(m_tree_store->append(parent_row.children()));
 		}
 
-		row[columns.col_name] = device.get_name();
-		row[columns.col_type] = device.get_type();
-		row[columns.col_id] = device.get_id();
-		row[columns.col_device] = device;
+		current_row[columns.col_name] = device.get_name();
+		current_row[columns.col_type] = device.get_type();
+		current_row[columns.col_id] = device.get_id();
+		current_row[columns.col_device] = device;
 	}
+
 	m_tree_view.expand_all();
 }
 
@@ -121,11 +131,21 @@ void Window::connect_signals() {
 	m_btn_prop.signal_clicked().connect(
 		sigc::mem_fun(*this, &Window::handle_sig_prop));
 
+	m_btn_float.signal_clicked().connect(
+		sigc::mem_fun(*this, &Window::handle_sig_float));
+
+	m_btn_attach.signal_clicked().connect(
+		sigc::mem_fun(*this, &Window::handle_sig_attach));
+
 	m_tree_view.signal_row_activated().connect(
 		[this](const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column) {
 			handle_sig_info();
 		}
 	);
+
+	m_tree_view.get_selection()->signal_changed().connect([this]() {
+		handle_sig_selchange();
+	});
 
 	m_help_report.signal_activate().connect(
 		sigc::mem_fun(*this, &Window::handle_sig_report));
@@ -135,12 +155,10 @@ void Window::connect_signals() {
 }
 
 void Window::handle_sig_info() {
-	Glib::RefPtr<Gtk::TreeSelection> refTreeSelection = m_tree_view.get_selection();
-	Gtk::TreeModel::iterator iter = refTreeSelection->get_selected();
-	if (iter) {
+	if (auto iter = m_tree_view.get_selection()->get_selected()) {
 		Gtk::TreeModel::Row row = *iter;
 		XInputDevice current_device = row[columns.col_device];
-		InfoWindow* infowindow = new InfoWindow(current_device);
+		auto infowindow = new InfoWindow(current_device);
 		infowindow->set_transient_for(*this);
 		infowindow->show();
 		infowindow->signal_hide().connect([infowindow]() {
@@ -150,17 +168,49 @@ void Window::handle_sig_info() {
 }
 
 void Window::handle_sig_prop() {
-	Glib::RefPtr<Gtk::TreeSelection> refTreeSelection = m_tree_view.get_selection();
-	Gtk::TreeModel::iterator iter = refTreeSelection->get_selected();
-	if (iter) {
+	if (auto iter = m_tree_view.get_selection()->get_selected()) {
 		Gtk::TreeModel::Row row = *iter;
 		XInputDevice current_device = row[columns.col_device];
-		PropWindow* propwindow = new PropWindow(current_device);
+		auto propwindow = new PropWindow(current_device);
 		propwindow->set_transient_for(*this);
 		propwindow->show();
 		propwindow->signal_hide().connect([propwindow]() {
 			delete propwindow;
 		});
+	}
+}
+
+void Window::handle_sig_float() {
+	if (auto iter = m_tree_view.get_selection()->get_selected()) {
+		Gtk::TreeModel::Row row = *iter;
+		XInputDevice current_device = row[columns.col_device];
+		XInputHelper::set_float(current_device.get_id());
+		populate_tree();
+	}
+}
+
+void Window::handle_sig_attach() {
+	if (auto iter = m_tree_view.get_selection()->get_selected()) {
+		Gtk::TreeModel::Row row = *iter;
+		XInputDevice current_device = row[columns.col_device];
+		auto reattachwindow = new ReattachWindow(current_device, m_masters_list);
+		reattachwindow->set_transient_for(*this);
+		reattachwindow->show();
+		reattachwindow->signal_hide().connect([this, reattachwindow]() {
+			delete reattachwindow;
+			populate_tree();
+		});
+	}
+}
+
+void Window::handle_sig_selchange() {
+	if (auto iter = m_tree_view.get_selection()->get_selected()) {
+		Gtk::TreeModel::Row row = *iter;
+		XInputDevice current_device = row[columns.col_device];
+		bool can_float = !current_device.is_float();
+		bool is_master = current_device.is_master();
+		m_btn_float.set_sensitive(can_float and !is_master);
+		m_btn_attach.set_sensitive(!can_float and !is_master);
 	}
 }
 
@@ -172,7 +222,7 @@ void Window::handle_sig_about() {
 
 void Window::handle_sig_report() {
 	try {
-		Gio::AppInfo::launch_default_for_uri(XInput_GTK::WEBSITE_REPORT);
+		Gio::AppInfo::launch_default_for_uri(XInputGTK::WEBSITE_REPORT);
 	} catch (const Glib::Error& err) {
 		g_warning("Failed to open link: %s", err.what().c_str());
 	}

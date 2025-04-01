@@ -21,18 +21,20 @@
 #include <array>
 #include <cstring>
 #include <filesystem>
-#include <vector>
-#include <regex>
+#include <gtkmm/messagedialog.h>
 
 std::string Utils::get_cmd_output(const std::string& cmd) {
+	constexpr int CMD_OUTPUT_BUFSIZE = 128;
+	char buffer[CMD_OUTPUT_BUFSIZE];
+	std::string full_cmd = cmd + " 2>&1";  // Redirect stderr to stdout
 	std::ostringstream result;
-	char buffer[Utils::CMD_OUTPUT_BUFSIZE];
 
-	FILE* pipe = popen(cmd.c_str(), "r");
+	FILE* pipe = popen(full_cmd.c_str(), "r");
 	if (!pipe) {
 		std::cerr << "Failed to open pipe (Utils::get_cmd_output)" << std::endl;
 		return "";
 	}
+
 	while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
 		result << buffer;
 	}
@@ -73,25 +75,8 @@ std::string Utils::str_trim_space(const std::string& source) {
 	return result_str;
 }
 
-std::vector<XInputDevice> Utils::parse_xinput_list() {
-	std::vector<XInputDevice> devices;
-	std::string device_ids = Utils::get_cmd_output("xinput list --id-only");
-	std::regex id_pattern(R"(\D*(\d+)\D*)");
-	std::smatch match;
-
-	std::istringstream iss(device_ids);
-	std::string line;
-	while (std::getline(iss, line)) {
-		if (std::regex_search(line, match, id_pattern)) {
-			try {
-				int device_id = std::stoi(match[1]);
-				XInputDevice device(device_id);
-				devices.push_back(device);
-			} catch (const std::exception& e) {
-				std::cerr << "Invalid device ID: " << line << " - " << e.what() << std::endl;
-			}
-		}
-	}
-
-	return devices;
+void Utils::show_popup(const std::string& message) {
+	auto dialog = Gtk::MessageDialog("Info");
+	dialog.set_secondary_text(message);
+	dialog.run();
 }

@@ -16,11 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <xinput-gtk/Utils.hpp>
 #include <xinput-gtk/xinput/XInputDevice.hpp>
+#include <xinput-gtk/xinput/XInputHelper.hpp>
 #include <xinput-gtk/gui/PropWindow.hpp>
+#include <xinput-gtk/gui/EditWindow.hpp>
 #include <vector>
-#include <iostream>
 
 PropWindow::PropWindow(const XInputDevice& device) : m_device(device) {
 	set_title("");
@@ -42,8 +42,13 @@ PropWindow::PropWindow(const XInputDevice& device) : m_device(device) {
 	populate_tree();
 
 	// Configure ActionBar
+	m_btn_edit.set_image_from_icon_name("edit");
+	m_btn_edit.set_tooltip_text("Edit selected property");
+
 	m_btn_reload.set_image_from_icon_name("view-refresh");
-	m_btn_reload.set_tooltip_text("Reload XInput list");
+	m_btn_reload.set_tooltip_text("Refresh properties");
+
+	m_actionbar.pack_start(m_btn_edit);
 	m_actionbar.pack_end(m_btn_reload);
 
 	// Organize layout
@@ -63,9 +68,8 @@ PropWindow::PropWindow(const XInputDevice& device) : m_device(device) {
 }
 
 void PropWindow::populate_tree() {
-	std::cout << "Loading properties of '" << m_device.get_name() << "'\n";
 	m_tree_store->clear();
-	std::vector<XInputDevice::Prop> props_list = m_device.get_props();
+	std::vector<XInputDevice::Prop> props_list = XInputHelper::get_props(m_device.get_id());
 
 	for (const auto& prop : props_list) {
 		Gtk::TreeModel::Row row = *(m_tree_store->append());
@@ -80,4 +84,30 @@ void PropWindow::populate_tree() {
 void PropWindow::connect_signals() {
 	m_btn_reload.signal_clicked().connect(
 		sigc::mem_fun(*this, &PropWindow::populate_tree));
+
+	m_btn_edit.signal_clicked().connect(
+		sigc::mem_fun(*this, &PropWindow::handle_sig_edit));
+
+	m_tree_view.signal_row_activated().connect(
+		[this](const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column) {
+			handle_sig_edit();
+		}
+	);
+}
+
+void PropWindow::handle_sig_edit() {
+	if (auto iter = m_tree_view.get_selection()->get_selected()) {
+		Gtk::TreeModel::Row row = *iter;
+		XInputDevice::Prop current_prop = {
+			.id = row[columns.col_id],
+			.name = row[columns.col_name],
+			.val = row[columns.col_value]
+		};
+		auto editwindow = new EditWindow(m_device, current_prop);
+		editwindow->set_transient_for(*this);
+		editwindow->show();
+		editwindow->signal_hide().connect([editwindow]() {
+			delete editwindow;
+		});
+	}
 }

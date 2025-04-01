@@ -18,15 +18,13 @@
 
 #include <xinput-gtk/gui/InfoWindow.hpp>
 #include <xinput-gtk/xinput/XInputDevice.hpp>
-#include <iostream>
+#include <xinput-gtk/xinput/XInputHelper.hpp>
 
 InfoWindow::InfoWindow(const XInputDevice& device) : m_device(device) {
 	set_title("");
 	set_default_size(500, 400);
 	set_border_width(8);
 	set_modal(true);
-
-	std::cout << "Loading information of '" << m_device.get_name() << "'\n";
 
 	// Title
 	m_label_name.set_label("Information of " + m_device.get_name());
@@ -38,7 +36,8 @@ InfoWindow::InfoWindow(const XInputDevice& device) : m_device(device) {
 	m_txtview_info.set_left_margin(8);
 
 	// Set TextView content
-	m_txtview_info.get_buffer()->set_text(m_device.get_info());
+	m_txtview_info.get_buffer()->set_text(
+		XInputHelper::get_info(m_device.get_id()));
 
 	// Organize layout
 	m_frame_txtview.add(m_scrolledwindow_txtview);

@@ -32,8 +32,8 @@ int main(int argc, char** argv) {
 	// Print 'xinput' version upon starting
 	std::cout << Utils::get_cmd_output("xinput --version");
 
-	std::string app_id = "org.xinput-gtk.app";
-	auto app = Gtk::Application::create(argc, argv, app_id);
+	const std::string APP_ID = "org.xinput-gtk.app";
+	auto app = Gtk::Application::create(argc, argv, APP_ID);
 	auto window = std::make_unique<Window>();
 
 	int status = app->run(*window);

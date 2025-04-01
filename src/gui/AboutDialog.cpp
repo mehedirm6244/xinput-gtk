@@ -24,13 +24,14 @@ AboutDialog::AboutDialog() {
 	set_modal(true);
 
 	set_program_name("XInput GTK");
-	set_license(XInput_GTK::LICENSE);
-	set_comments(XInput_GTK::COMMENT);
-	set_website(XInput_GTK::WEBSITE);
+	set_authors(XInputGTK::AUTHORS);
+	set_license(XInputGTK::LICENSE);
+	set_comments(XInputGTK::COMMENT);
+	set_website(XInputGTK::WEBSITE);
 	try {
     set_logo(Gtk::IconTheme::get_default()->load_icon(
       "xorg", 128, Gtk::ICON_LOOKUP_USE_BUILTIN));
   } catch (const Gtk::IconThemeError& e) {
-    std::cerr << "Icon not found: 'xorg'" << std::endl;
+    std::cerr << "Error: " << e.what() << std::endl;
   }
 }

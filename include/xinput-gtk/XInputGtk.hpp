@@ -19,10 +19,13 @@
 #ifndef XINPUT_GTK_HPP
 #define XINPUT_GTK_HPP
 
-#include <string_view>
+#include <vector>
+#include <glibmm/ustring.h>
 
-namespace XInput_GTK {
-	constexpr const char* AUTHOR = "Mehedi Rahman Mahi";
+namespace XInputGTK {
+	const std::vector<Glib::ustring> AUTHORS = {
+		"Mehedi Rahman Mahi"
+	};
 	constexpr const char* COMMENT = "A GTK3 frontend for Xorg XInput";
 	constexpr const char* WEBSITE = "https://github.com/mehedirm6244/xinput-gtk";
 	constexpr const char* WEBSITE_REPORT = "https://github.com/mehedirm6244/xinput-gtk/issues";
@@ -38,6 +41,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.)";
-} // namespace XInput_GTK
+} // namespace XInputGTK
 
 #endif // XINPUT_GTK_HPP

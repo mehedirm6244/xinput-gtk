@@ -16,35 +16,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PROP_WINDOW_HPP
-#define PROP_WINDOW_HPP
+#ifndef REATTACH_WINDOW_HPP
+#define REATTACH_WINDOW_HPP
 
 #include <gtkmm.h>
 #include <xinput-gtk/xinput/XInputDevice.hpp>
 
-class PropWindow : public Gtk::Window {
+class ReattachWindow : public Gtk::Window {
 public:
-	PropWindow(const XInputDevice& device);
-	~PropWindow() = default;
-
-protected:
-	Gtk::TreeView m_tree_view;
-	Glib::RefPtr<Gtk::TreeStore> m_tree_store;
-
-	class ModelColumns : public Gtk::TreeModel::ColumnRecord {
-	public:
-		ModelColumns() {
-			add(col_id);
-			add(col_name);
-			add(col_value);
-    }
-
-    Gtk::TreeModelColumn<int> col_id;
-		Gtk::TreeModelColumn<std::string> col_name;
-		Gtk::TreeModelColumn<std::string> col_value;
-	};
-
-	ModelColumns columns;
+	ReattachWindow(const XInputDevice& device, const std::vector<int>& master_list);
+	~ReattachWindow() = default;
 
 private:
 	XInputDevice m_device;
@@ -52,19 +33,13 @@ private:
 	Gtk::Box m_box_main{Gtk::ORIENTATION_VERTICAL, 10};
 
 	Gtk::Label m_label_name;
+	Gtk::ComboBoxText m_combo_masters;
 
-	Gtk::Box m_box_scrolledwindow{Gtk::ORIENTATION_VERTICAL};
-	Gtk::Frame m_frame_scrolledwindow;
-	Gtk::ScrolledWindow m_scrolledwindow;
+	Gtk::Box m_box_action{Gtk::ORIENTATION_HORIZONTAL, 6};
+	Gtk::Button m_btn_apply;
+	Gtk::Button m_btn_cancel;
 
-	Gtk::ActionBar m_actionbar;
-	Gtk::Button m_btn_reload;
-	Gtk::Button m_btn_edit;
-
-	void handle_sig_edit();
-
-	void populate_tree();
 	void connect_signals();
 };
 
-#endif // PROP_WINDOW_HPP
+#endif // REATTACH_WINDOW_HPP

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.10)
 project(xinput-gtk)
 
 # Find required packages
@@ -17,7 +17,10 @@ add_executable(xinput-gtk
   src/gui/AboutDialog.cpp
   src/gui/InfoWindow.cpp
   src/gui/PropWindow.cpp
+  src/gui/EditWindow.cpp
+  src/gui/ReattachWindow.cpp
   src/xinput/XInputDevice.cpp
+  src/xinput/XInputHelper.cpp
 )
 
 # Link libraries
