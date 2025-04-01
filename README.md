@@ -1,7 +1,7 @@
 # xinput-gtk
 xinput-gtk is a GTK3 frontend for Xorg XInput
 
-![Screenshot](https://i.ibb.co.com/nMJbvsrQ/Mn5KK9g.png)
+![image](https://github.com/user-attachments/assets/e635b774-daab-4906-a059-fcbf1e87be84)
 
 ## Features
 - List available input devices
